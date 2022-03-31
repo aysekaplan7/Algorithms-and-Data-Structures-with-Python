@@ -1,0 +1,117 @@
+class Maze:
+    def __init__(self,array):
+        count_S = 0
+        count_E = 0
+        for i in array:
+            if type(i) != list:
+                raise Exception("InvalidMazeException")
+            for j in array[1:]:
+                if len(j)!=len(i):
+                    raise Exception("InvalidMazeException")
+            for k in i:
+                if len(k)!=1 or k not in ['S','E','O','X']:
+                    raise Exception("InvalidMazeException")
+            count_S = count_S + i.count("S")
+            count_E = count_E + i.count("E")           
+        if count_E != 1 or count_S != 1:
+            raise Exception("InvalidMazeException")
+        self._array = array
+        
+    def get_start(self):
+        for i in range(len(self)):
+            for j in range(len(self[1])):
+                if self._array[i][j]=="S":
+                    return (i,j)
+                
+    def get_exit(self):
+        for i in range(len(self)):
+            for j in range(len(self[1])):
+                if self._array[i][j]=="E":
+                    return (i,j)
+                
+    def __getitem__(self,k):
+        return self._array[k]
+    
+    def __len__(self):
+        return len(self._array)
+        
+class Stack:
+    def __init__(self):
+        self._liste = []
+        
+    def __len__(self):
+        return len(self._liste)
+    
+    def is_empty(self):
+        return len(self._liste) == 0
+
+    def push(self,e):
+        self._liste.append(e)
+        
+    def top(self):
+        if self.is_empty():
+            raise Exception("Stack is empty")
+        return self._liste[-1]
+    
+    def pop(self):
+        if self.is_empty():
+            raise Exception("Stack is empty")
+        return self._liste.pop()
+    
+
+class MazeSolver:
+    
+    def __init__(self,path):
+        self._path = path
+        self._maze = Maze(self.text_to_array(path))
+        self._cellstack = Stack()
+        self._explored = []
+        self._explored.append(self._maze.get_start())
+        
+    def __getitem__(self,k):
+        return self._maze[k]
+    
+    
+    def get_neighbor(self,a_tuple):
+        sum_outer = 0
+        sum_inter = 0
+        for x in self._maze:
+            sum_outer += 1
+        for k in self._maze[0]:
+            sum_inter+=1
+        if a_tuple[0]-1 in range(0,sum_outer):    
+            if self._maze[a_tuple[0]-1][a_tuple[1]] == "O" or self._maze[a_tuple[0]-1][a_tuple[1]] == "E":
+                if (a_tuple[0]-1,a_tuple[1]) not in self._explored:
+                    return (a_tuple[0]-1,a_tuple[1])
+        if a_tuple[1]+1 in range(0,sum_inter):
+            if self._maze[a_tuple[0]][a_tuple[1]+1] == "O" or self._maze[a_tuple[0]][a_tuple[1]+1] == "E":
+                if (a_tuple[0],a_tuple[1]+1) not in self._explored:
+                    return (a_tuple[0],a_tuple[1]+1)
+        if a_tuple[0]+1 in range(0,sum_outer):
+            if self._maze[a_tuple[0]+1][a_tuple[1]] == "O" or self._maze[a_tuple[0]+1][a_tuple[1]] == "E":
+                if (a_tuple[0]+1,a_tuple[1]) not in self._explored:
+                    return (a_tuple[0]+1,a_tuple[1])
+        if a_tuple[1]-1  in range(0,sum_inter):
+            if self._maze[a_tuple[0]][a_tuple[1]-1] == "O" or self._maze[a_tuple[0]][a_tuple[1]-1] == "E":
+                if (a_tuple[0],a_tuple[1]-1) not in self._explored:
+                    return (a_tuple[0],a_tuple[1]-1)
+        
+        
+    def solve_maze(self):
+        self._cellstack.push(self._maze.get_start())
+        while not self._cellstack.is_empty():
+            c = self._cellstack.top()
+            if c == self._maze.get_exit():
+                lst = []
+                while not self._cellstack.is_empty():
+                    lst.append(self._cellstack.pop())
+                return "{} \nwhere {} is start and {} is the end cell".format(lst[::-1],lst[-1],lst[0])
+            if self.get_neighbor(c) not in self._explored and self.get_neighbor(c) != None:
+                self._cellstack.push(self.get_neighbor(c))
+                self._explored.append(self.get_neighbor(c))
+            else:
+                self._cellstack.pop()
+        return [(-1,-1)]    
+            
+    def text_to_array(self,path):
+        return [[x for x in line.rstrip('\n')] for line in open(path)]
